@@ -1,0 +1,5 @@
+Original mill model and textures: David Lettier, 3D Game Shaders For Beginners.
+Converted locally from the tutorial assets at the user's request.
+The original README explicitly excludes artwork from its software license.
+This conversion does not grant a new license for the model or textures.
+Source: https://github.com/lettier/3d-game-shaders-for-beginners
