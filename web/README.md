@@ -20,7 +20,15 @@ npm run preview
 
 `dist/` contains the complete static site. Serve it over HTTP; opening HTML directly with `file://` will not load JavaScript modules reliably. No backend is required. The build validates every local HTML link and asset URL. Its relative URLs work at `/` or beneath a path such as `/3d-game-shaders-for-beginners/`.
 
-The existing `../docs/`, `../sections/`, and native demo are preserved. To host both editions, copy this build into a separate directory such as `docs/browser/` as part of your deployment. Do not overwrite the existing documentation. This implementation does not publish or configure hosting.
+The existing `../docs/`, `../sections/`, and native demo are preserved. To host both editions in one site, copy this build into a separate directory such as `docs/browser/` as part of your deployment. Do not overwrite the existing documentation.
+
+## GitHub Pages
+
+The repository workflow `.github/workflows/pages.yml` builds this companion and publishes only `web/dist` to GitHub Pages. In the repository's **Settings → Pages → Build and deployment**, select **GitHub Actions** as the source. Then run **Deploy shader companion to GitHub Pages** from the Actions tab. Subsequent changes to `web/` on `main` deploy automatically.
+
+For this fork, the expected site URL is `https://leeteng2001.github.io/3d-game-shader-beginner/`; the finale is at `final-scene.html` beneath that URL. Relative asset paths already support this repository subpath. The complete model and textures are uploaded with the site. No server, Panda3D installation, environment secrets, or committed build output is needed.
+
+This workflow makes the browser companion the Pages homepage. It leaves the original documentation files in Git untouched. The first deployment requires the repository Pages setting above; adding the workflow alone does not enable Pages. See GitHub's [custom workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
 ## Embed in documentation
 
