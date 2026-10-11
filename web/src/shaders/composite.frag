@@ -55,7 +55,8 @@ void main() {
   vec4 p = texture(uPosition, vUv);
   vec3 blurred = texture(uBlur, vUv).rgb;
   if (uMode == 8) color = blurred;
-  if (uMode == 9 || uMode == 0) color += blurred * uBloom;
+  // Zero times NaN is still NaN: disabled bloom must not consume a blur buffer.
+  if ((uMode == 9 || uMode == 0) && uBloom > 0.0) color += blurred * uBloom;
   if (uMode == 13 && p.a > 0.5) {
     vec4 material = texture(uMaterial, vUv);
     vec3 world = (uInverseView * vec4(p.xyz, 1.0)).xyz;
@@ -65,7 +66,7 @@ void main() {
   if (uMode == 15) color *= texture(uMask, vUv).r;
   if (uMode == 16 && p.a > 0.5) {
     vec4 previous = uPreviousViewProjection * uInverseView * vec4(p.xyz, 1.0);
-    vec2 oldUv = previous.xy / previous.w * 0.5 + 0.5;
+    vec2 oldUv = previous.w > 0.0001 ? previous.xy / previous.w * 0.5 + 0.5 : vUv;
     vec2 velocity = clamp((vUv - oldUv) * uAmount, vec2(-0.15), vec2(0.15));
     vec3 sum = vec3(0.0);
     for (int i = 0; i < 12; i++) sum += texture(uInput, clamp(vUv - velocity * float(i) / 11.0, vec2(0.0), vec2(1.0))).rgb;
@@ -106,7 +107,7 @@ void main() {
     if (water.a > 0.5 && (p.a < 0.5 || water.z >= p.z - 0.01)) {
       vec3 n = normalize(texture(uWaterNormal, vUv).xyz);
       vec3 view = normalize(-water.xyz);
-      float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(n, view), 0.0), 5.0);
+      float fresnel = 0.02 + 0.98 * pow(1.0 - clamp(dot(n, view), 0.0, 1.0), 5.0);
       vec3 reflectionHit = texture(uReflection, vUv).rgb;
       vec3 refractionHit = texture(uRefraction, vUv).rgb;
       vec3 reflected = mix(vec3(0.22, 0.4, 0.48), texture(uInput, reflectionHit.xy).rgb, reflectionHit.z);

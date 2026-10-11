@@ -283,6 +283,39 @@ test('final scene remains visible after orbiting and panning away from the world
   }
 });
 
+test('final scene rejects poisoned previous-frame blur and stays finite during sustained orbit', async ({ page }) => {
+  await page.goto('/final-scene.html?still');
+  test.skip(!(await ready(page)), 'Float targets unavailable');
+  const result = await page.evaluate(() => {
+    const engine = (window as any).__shaderLab;
+    engine.paused = true; engine.quality = 0.25; engine.render(0);
+    const gl = engine.renderer.getContext();
+    // Reproduce the persistent growing-black-region failure deterministically.
+    // The current frame must never depend on this stale scratch buffer.
+    engine.renderer.setRenderTarget(engine.blurY.target);
+    gl.clearBufferfv(gl.COLOR, 0, new Float32Array([NaN, NaN, NaN, 1]));
+    const invalid: string[] = [];
+    for (let frame = 0; frame < 120; frame++) {
+      const angle = frame * Math.PI / 60;
+      engine.camera.position.set(Math.sin(angle) * 15, 6, Math.cos(angle) * 15);
+      engine.time = frame / 30; engine.render(0);
+      if (frame % 20 !== 0) continue;
+      for (const name of ['opaque', 'bright', 'blurY', 'composite', 'chain']) {
+        const target = engine[name].target;
+        const data = new Uint16Array(target.width * target.height * 4);
+        engine.renderer.readRenderTargetPixels(target, 0, 0, target.width, target.height, data);
+        // Half-float exponent 31 represents either infinity or NaN.
+        if (data.some(value => (value & 0x7c00) === 0x7c00)) invalid.push(`${frame}:${name}`);
+      }
+    }
+    return { invalid, errors: engine.stats.shaderErrors };
+  });
+  expect(result.invalid).toEqual([]);
+  expect(result.errors).toEqual([]);
+  const image = await pixels(page);
+  expect(image.filter(value => value > 10).length / image.length).toBeGreaterThan(0.5);
+});
+
 test('mill loading errors leave source and explanation readable', async ({ page }) => {
   await page.route('**/mill/mill.gltf', route => route.fulfill({ status: 404, body: 'Missing model' }));
   await page.goto('/final-scene.html');

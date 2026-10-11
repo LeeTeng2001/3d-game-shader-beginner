@@ -43,4 +43,6 @@ Safari, iOS, Android hardware, and physical touch gestures were not tested. The 
 
 After the reported black canvas during orbiting, full-screen pass meshes were excluded from world-space frustum culling. The production build and four targeted Chrome checks pass, including a regression that renders four camera angles at an 887×588 viewport and checks that the canvas stays populated. The full-screen vertex shader writes clip-space positions, so scene-camera culling must never hide these passes.
 
-The site is built and previewable locally; no deployment was performed.
+A subsequent report of a growing black region exposed a separate stale-buffer dependency: the finale sampled the previous frame's blur during water composition, even with bloom multiplied by zero. Injecting NaNs into that scratch buffer reproduced persistent invalid output (71,400 nonfinite components at the diagnostic resolution). The finale now starts with a current-frame texture, and disabled bloom skips the calculation. Fresnel inputs are clamped to their valid domain, and motion reprojection guards a nonpositive homogeneous W. The production build and ten targeted Chrome tests pass. A new poisoned-buffer regression passes in Chrome and Firefox, checking finite intermediate buffers through 120 orbiting frames. Natural reproduction on the user's in-app browser/GPU remains unverified; the injected regression specifically verifies the identified propagation path.
+
+GitHub Pages deployment is configured separately; these checks validate the local production build.

@@ -328,6 +328,9 @@ export class ShaderEngine {
     u.uShadows.value = on('shadows') ? 1 : 0; u.uCel.value = on('cel') ? 1 : 0;
     u.uRim.value = on('rim') ? 0.06 : 0; u.uFresnel.value = on('fresnel') ? 0.15 : 0;
     u.uTime.value = this.time; u.uEnabled.value = 1; u.uWater.value = 0;
+    // No color from the previous frame may enter this frame's composition.
+    // blurY still contains the previous sharpen/blur result at this point.
+    u.uBlur.value = this.opaque.target.texture;
     let color = this.opaque.target.texture;
     let next = this.composite;
     const step = (mode: number) => {
@@ -348,6 +351,7 @@ export class ShaderEngine {
       x.uFilter.value = kind; x.uDirection.value.set(1, 0); this.blurX.render(context);
       y.uInput.value = this.blurX.target.texture; y.uRadius.value = kind <= 1 ? radius : 0;
       y.uFilter.value = kind <= 1 ? kind : 0; y.uDirection.value.set(0, 1); this.blurY.render(context);
+      u.uBlur.value = this.blurY.target.texture;
     };
     if (on('deferred')) step(13);
     // Keep inspection buffers current even when their contribution is disabled.

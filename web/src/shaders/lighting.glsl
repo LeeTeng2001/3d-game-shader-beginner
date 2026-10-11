@@ -21,7 +21,9 @@ vec3 illuminate(vec3 albedo, vec3 n, vec3 position, vec3 world, float emission) 
   float specular = pow(max(highlight, 0.0), uShininess) * step(0.001, diffuse);
   float shadow = visibility(world);
   vec3 color = albedo * (0.16 + diffuse * shadow * uLightIntensity) + vec3(0.35 * specular * shadow);
-  float grazing = 1.0 - max(dot(n, v), 0.0);
+  // Rounding can make the dot of unit vectors slightly greater than one.
+  // pow with a negative base is undefined in GLSL, even for integer exponents.
+  float grazing = 1.0 - clamp(dot(n, v), 0.0, 1.0);
   float fresnel = uReflectance + (1.0 - uReflectance) * pow(grazing, 5.0);
   color += uFresnel * fresnel * vec3(0.25, 0.6, 0.8);
   color += uRim * pow(grazing, uRimPower) * vec3(0.25, 0.85, 0.9);
